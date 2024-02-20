@@ -1,94 +1,30 @@
-import React, { useState } from 'react';
 import './index.css';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash } from '@fortawesome/free-solid-svg-icons';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
-import { faPenToSquare ,faCheckSquare} from '@fortawesome/free-solid-svg-icons';
+import { faTrash, faPlus, faPenToSquare, faCheckSquare } from '@fortawesome/free-solid-svg-icons';
 
 function App() {
+    const [rows, setRows] = useState([]);
     const [formData, setFormData] = useState({
-        studentNo: '',
-        firstName: '',
-        lastName: '',
+        firstname: '',
+        lastname: '',
         age: '',
-        phoneNo: ''
+        phone_no: ''
     });
-    const [selectedRowIndex, setSelectedRowIndex] = useState(null); 
-    const [rows, setRows] = useState([
-        {
-            studentNo: '1',
-            firstName: 'John',
-            lastName: 'Doe',
-            age: '30',
-            phoneNo: '123-456-7890'
-        },
-        {
-            studentNo: '2',
-            firstName: 'Jane',
-            lastName: 'Doe',
-            age: '25',
-            phoneNo: '987-654-3210'
-        },
-        {
-            studentNo: '3',
-            firstName: 'Tom',
-            lastName: 'Smith',
-            age: '40',
-            phoneNo: '111-222-3333'
-        },
-        {
-            studentNo: '4',
-            firstName: 'Jerry',
-            lastName: 'Smith',
-            age: '35',
-            phoneNo: '444-555-6666'
-        },
-        {
-            studentNo: '5',
-            firstName: 'Marry',
-            lastName: 'Smith',
-            age: '28',
-            phoneNo: '777-888-9999'
-        },
-        {
-            studentNo: '6',
-            firstName: 'Mike',
-            lastName: 'Smith',
-            age: '32',
-            phoneNo: '000-111-2222'
-        },
-        {
 
-            studentNo: '7',
-            firstName: 'Marry',
-            lastName: 'Smith',
-            age: '28',
-            phoneNo: '777-888-9999'
-        },
-        {
-            studentNo: '8',
-            firstName: 'Mike',
-            lastName: 'Smith',
-            age: '32',
-            phoneNo: '000-111-2222'
-        },
-        {
+    useEffect(() => {
+        fetchData();
+    }, []);
 
-            studentNo: '9',
-            firstName: 'Marry',
-            lastName: 'Smith',
-            age: '28',
-            phoneNo: '777-888-9999'
-        },
-        {
-            studentNo: '10',
-            firstName: 'Mike',
-            lastName: 'Smith',
-            age: '32',
-            phoneNo: '000-111-2222'
+    const fetchData = async () => {
+        try {
+            const response = await axios.get('http://192.168.8.107:3000/api/students');
+            setRows(response.data);
+        } catch (error) {
+            console.error('Error fetching data:', error);
         }
-        
-    ]);
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -98,90 +34,106 @@ function App() {
         }));
     };
 
-    const handleAdd = () => {
-        if (formData.age === '' || formData.firstName === '' || formData.lastName === '' || formData.phoneNo === '' || formData.studentNo === '') {
+    const handleAdd = async () => {
+        if (formData.age === '' || formData.firstname === '' || formData.lastname === '' || formData.phone_no === '') {
             window.alert('Please fill in all fields');
         } else {
-            setRows(prevRows => [...prevRows, formData]);
-            setFormData({
-                studentNo: '',
-                firstName: '',
-                lastName: '',
-                age: '',
-                phoneNo: ''
-            });
+            try {
+                await axios.post('http://192.168.8.107:3000/api/students', formData);
+                fetchData(); 
+                setFormData({
+                    firstname: '',
+                    lastname: '',
+                    age: '',
+                    phone_no: ''
+                });
+                window.alert('Student added successfully');
+            } catch (error) {
+                window.alert('Error adding student:', error);
+            }
         }
     };
 
-    const handleDelete = (index) => {
-        setRows(prevRows => prevRows.filter((row, i) => i !== index));
-    };
+    const [selectedRowIndex, setSelectedRowIndex] = useState(null); 
 
     const handleEdit = (index) => {
         setSelectedRowIndex(index); 
         const selectedRow = rows[index];
         setFormData({
-            studentNo: selectedRow.studentNo,
-            firstName: selectedRow.firstName,
-            lastName: selectedRow.lastName,
+            
+            firstname: selectedRow.firstname,
+            lastname: selectedRow.lastname,
             age: selectedRow.age,
-            phoneNo: selectedRow.phoneNo
+            phone_no: selectedRow.phone_no
         });
+
+
     };
 
-    const handleSaveEdit = () => {
+    const handleSaveEdit = async () => {
         if (selectedRowIndex !== null) {
-          
-            setRows(prevRows => {
-                const updatedRows = [...prevRows];
-                updatedRows[selectedRowIndex] = { ...formData };
-                return updatedRows;
-            });
-           
-            setFormData({
-                studentNo: '',
-                firstName: '',
-                lastName: '',
-                age: '',
-                phoneNo: ''
-            });
-            setSelectedRowIndex(null);
+            try {
+                await axios.put(`http://192.168.8.107:3000/api/students/${rows[selectedRowIndex].student_no}`, formData);
+                fetchData(); 
+                setFormData({
+                    
+                    firstname: '',
+                    lastname: '',
+                    age: '',
+                    phone_no: ''
+                });
+                setSelectedRowIndex(null);
+                window.alert('Student updated successfully');
+            } catch (error) {
+                console.error('Error saving edit:', error);
+            }
         }
     };
 
+    const handleDelete = async (index) => {
+        const shouldDelete = window.confirm("Are you sure you want to delete this student?");
+        if (shouldDelete) {
+            try {
+                await axios.delete(`http://192.168.8.107:3000/api/students/${rows[index].student_no}`);
+                fetchData(); 
+            } catch (error) {
+                console.error('Error deleting student:', error);
+            }
+        }
+    };
+    
+
+    
+
     return (
-        <div className="border border-red-700 mx-auto flex justify-center h-screen items-start">
+        <div className="mx-auto flex justify-center h-screen items-start">
             <table className="table-auto">
                 <thead>
                     <tr>
-                        <th className="px-8 py-5 w-auto"><input className='h-10 text-center border rounded w-auto ' type="number" placeholder="Student no" name="studentNo" value={formData.studentNo} onChange={handleChange} required /></th>
-                        <th className="px-8 py-5 w-auto"><input className='h-10 text-center border rounded w-auto' type="text" placeholder="First Name" name="firstName" value={formData.firstName} onChange={handleChange} required /></th>
-                        <th className="px-8 py-5 w-auto"><input className='h-10 text-center border rounded w-auto' type="text" placeholder="Last Name" name="lastName" value={formData.lastName} onChange={handleChange} required /></th>
+                        <th className="px-8 py-5 w-auto"><input className='h-10 text-center border rounded w-auto' type="text" placeholder="First Name" name="firstname" value={formData.firstname} onChange={handleChange} required /></th>
+                        <th className="px-8 py-5 w-auto"><input className='h-10 text-center border rounded w-auto' type="text" placeholder="Last Name" name="lastname" value={formData.lastname} onChange={handleChange} required /></th>
                         <th className="px-8 py-5 w-auto"><input className='h-10 text-center border rounded w-auto' type="number" placeholder="Age" name="age" value={formData.age} onChange={handleChange} required /></th>
-                        <th className="px-8 py-5 w-auto"><input className='h-10 text-center border rounded w-auto' type="text" placeholder="Phone no" name="phoneNo" value={formData.phoneNo} onChange={handleChange} required /></th>
+                        <th className="px-8 py-5 w-auto"><input className='h-10 text-center border rounded w-auto' type="text" placeholder="Phone no" name="phone_no" value={formData.phone_no} onChange={handleChange} required /></th>
                         <th className="px-8 py-5 w-auto">
-                        {selectedRowIndex !== null  ?(<>
+                            {selectedRowIndex !== null  ?(<>
                         </>) :
                          (<>
                          <div className='bg-mycolor h-10 w-10 rounded-full flex items-center justify-center font-semibold text-white hover:bg-white text-xl hover:text-mycolor hover:border-2 hover:border-mycolor hover:cursor-pointer' onClick={handleAdd}>
                                 <p><FontAwesomeIcon icon={faPlus} /></p>
                             </div>
                         </>)}
-                            
                         </th>
                     </tr>
                 </thead>
-
                 <tbody>
                     {rows.map((row, index) => (
                         <tr key={index}>
-                            <td className="border px-4 py-2 w-auto">{row.studentNo}</td>
-                            <td className="border px-4 py-2 w-auto">{row.firstName}</td>
-                            <td className="border px-4 py-2 w-auto">{row.lastName}</td>
+                            <td className="border px-4 py-2 w-auto">{row.firstname}</td>
+                            <td className="border px-4 py-2 w-auto">{row.lastname}</td>
                             <td className="border px-4 py-2 w-auto">{row.age}</td>
-                            <td className="border px-4 py-2 w-auto">{row.phoneNo}</td>
+                            <td className="border px-4 py-2 w-auto">{row.phone_no}</td>
                             <td className='flex'>
-                                {selectedRowIndex === index ? ( 
+                            {selectedRowIndex === index ? ( 
                                     <>
                                         <div className='bg-mycolor h-8 w-8 rounded-full flex items-center justify-center font-semibold text-white ml-2 hover:bg-white hover:text-mycolor hover:border-2 hover:border-mycolor hover:cursor-pointer' onClick={handleSaveEdit}>
                                             <p><FontAwesomeIcon icon={faCheckSquare} /></p>
@@ -207,4 +159,3 @@ function App() {
 }
 
 export default App;
-
